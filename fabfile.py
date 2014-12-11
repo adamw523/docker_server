@@ -1,8 +1,9 @@
 import ConfigParser
 import fabtools
 
+from fabric.contrib.files import cd, env, exists, local, sudo, uncomment
+from fabric.operations import put, run
 from fabric.utils import abort
-from fabric.contrib.files import env, exists, sudo, uncomment
 from fabtools import require
 
 env.project_name = 'docker_server'
@@ -48,6 +49,7 @@ def _add_user():
         fabtools.user.create('adam', shell='/bin/bash')
         fabtools.require.users.sudoer('adam')
     #uncomment('/etc/sudoers', 'includedir')
+    require.users.user('adam', extra_groups=['docker'])
 
 def _install_packages():
     require.deb.packages( ['python-setuptools'] )
@@ -65,3 +67,37 @@ def _create_swapfile():
 #---------------------------
 #
 #---------------------------
+
+def _copy_files():
+    put('nginx', 'builds/server/')
+    put('fig.yml', 'builds/server/')
+
+def nginx_build():
+    """
+    Build the nginx server remotely
+    """
+    run('mkdir -p builds/server')
+    put('fig.yml', 'builds/server/')
+    _copy_files()
+    with cd('builds/server'):
+        run('fig build')
+
+def nginx_up():
+    """
+    Run the nginx server remotely
+    """
+    with cd('~adam/builds/server'):
+        sudo('fig up -d')
+
+def nginx_kill():
+    with cd('~adam/builds/server'):
+        sudo('fig kill')
+
+def nginx_rm():
+    with cd('~adam/builds/server'):
+        sudo('fig rm --force')
+
+
+
+
+
