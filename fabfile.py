@@ -25,7 +25,6 @@ def dodo():
 	env.hosts = [env.config.get('dodo', 'host')]
 	env.user = env.config.get('dodo', 'user')
 
-
 def root():
     env.user = 'root'
 
@@ -71,6 +70,8 @@ def _create_swapfile():
 def _copy_files():
     put('nginx', 'builds/server/')
     put('fig.yml', 'builds/server/')
+    docker_ip = run("/sbin/ifconfig docker0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'")
+    run('sed -i "s/docker_ip_address/%s/g" builds/server/nginx/nginx.conf' % docker_ip)
 
 def nginx_build():
     """
